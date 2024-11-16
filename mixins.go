@@ -3,11 +3,11 @@ package tailless
 import "fmt"
 
 type mixins interface {
-	Get(string) *SelectorNode
-	Set(string, *SelectorNode)
+	Get(string) *selectorNode
+	Set(string, *selectorNode)
 }
 
-func resolveMixins(tree *RootNode) error {
+func resolveMixins(tree *rootNode) error {
 	return recursiveResolveMixins(tree, nil, newTailwindCollection())
 }
 
@@ -53,16 +53,16 @@ func recursiveResolveMixins(n node, parentMixins mixins, twMixins mixins) error 
 
 type mixinsCollection struct {
 	Parent mixins
-	Items  map[string]*SelectorNode
+	Items  map[string]*selectorNode
 }
 
 func newMixinsCollection(parent mixins) *mixinsCollection {
 	mixins := mixinsCollection{Parent: parent}
-	mixins.Items = make(map[string]*SelectorNode)
+	mixins.Items = make(map[string]*selectorNode)
 	return &mixins
 }
 
-func (m *mixinsCollection) Get(name string) *SelectorNode {
+func (m *mixinsCollection) Get(name string) *selectorNode {
 	node := m.Items[name]
 	if node != nil {
 		return node
@@ -81,6 +81,6 @@ func (m *mixinsCollection) Read(n node) {
 	}
 }
 
-func (m *mixinsCollection) Set(name string, node *SelectorNode) {
+func (m *mixinsCollection) Set(name string, node *selectorNode) {
 	m.Items[name] = node
 }

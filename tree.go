@@ -16,8 +16,8 @@ type node interface {
 	HideIfEmpty() bool
 	Render(io.Writer)
 	GetType() string
-	GetVariable(*VariablesCollection)
-	ReplaceVariables(*VariablesCollection) error
+	GetVariable(*variablesCollection)
+	ReplaceVariables(*variablesCollection) error
 	GetMixin(mixins)
 	GetMixinName() string
 	GetCopy() node
@@ -25,71 +25,71 @@ type node interface {
 	IsParentOf(node) bool
 }
 
-type BaseNode struct {
+type baseNode struct {
 	Children   []node
 	LineNumber int
 	Hidden     bool
 }
 
-func (n *BaseNode) ExpandSelectors(parentSelectors []string) {
+func (n *baseNode) ExpandSelectors(parentSelectors []string) {
 
 }
 
-func (n *BaseNode) HideIfEmpty() bool {
+func (n *baseNode) HideIfEmpty() bool {
 	return false
 }
 
-func (n *BaseNode) GetChildren() []node {
+func (n *baseNode) GetChildren() []node {
 	return n.Children
 }
 
-func (n *BaseNode) SetChildren(children []node) {
+func (n *baseNode) SetChildren(children []node) {
 	n.Children = children
 }
 
-func (n *BaseNode) AddChild(child node) {
+func (n *baseNode) AddChild(child node) {
 	n.Children = append(n.Children, child)
 }
 
-func (n *BaseNode) GetVariable(variables *VariablesCollection) {
+func (n *baseNode) GetVariable(variables *variablesCollection) {
 
 }
 
-func (n *BaseNode) ReplaceVariables(variables *VariablesCollection) error {
+func (n *baseNode) ReplaceVariables(variables *variablesCollection) error {
 	return nil
 }
 
-func (n *BaseNode) GetMixin(mixins) {
+func (n *baseNode) GetMixin(mixins) {
 
 }
 
-func (n *BaseNode) GetMixinName() string {
+func (n *baseNode) GetMixinName() string {
 	return ""
 }
 
-func (n *BaseNode) GetCopy() node {
+func (n *baseNode) GetCopy() node {
 	return nil
 }
 
-func (n *BaseNode) GetLineNumber() int {
+func (n *baseNode) GetLineNumber() int {
 	return n.LineNumber
 }
 
-func (n *BaseNode) Dump(indent string) {
+func (n *baseNode) Dump(indent string) {
 	for _, child := range n.Children {
 		child.Dump(indent + "  ")
 	}
 }
 
-func (n *BaseNode) Render(io.Writer) {
+func (n *baseNode) Render(io.Writer) {
 
 }
 
-func (n *BaseNode) GetType() string {
+func (n *baseNode) GetType() string {
 	return ""
 }
 
-func (n *BaseNode) IsParentOf(node node) bool {
+func (n *baseNode) IsParentOf(node node) bool {
 	for _, child := range n.Children {
 		if child == node {
 			return true
@@ -103,17 +103,17 @@ func (n *BaseNode) IsParentOf(node node) bool {
 	return false
 }
 
-type RootNode struct {
-	BaseNode
+type rootNode struct {
+	baseNode
 }
 
-func ExpandSelectors(tree *RootNode) {
+func expandSelectors(tree *rootNode) {
 	for _, child := range tree.Children {
 		child.ExpandSelectors([]string{""})
 	}
 }
 
-func (n *RootNode) HideIfEmpty() bool {
+func (n *rootNode) HideIfEmpty() bool {
 	isEmpty := true
 	for _, child := range n.Children {
 		if !child.HideIfEmpty() {
@@ -125,27 +125,27 @@ func (n *RootNode) HideIfEmpty() bool {
 	return isEmpty
 }
 
-func (n *RootNode) Render(w io.Writer) {
+func (n *rootNode) Render(w io.Writer) {
 	for _, child := range n.Children {
 		child.Render(w)
 	}
 }
 
-type VariableNode struct {
-	BaseNode
+type variableNode struct {
+	baseNode
 	Text string
 }
 
-func (n *VariableNode) GetType() string {
+func (n *variableNode) GetType() string {
 	return "variable"
 }
 
-func (n *VariableNode) HideIfEmpty() bool {
+func (n *variableNode) HideIfEmpty() bool {
 	n.Hidden = true
 	return true
 }
 
-func (n *VariableNode) GetVariable(variables *VariablesCollection) {
+func (n *variableNode) GetVariable(variables *variablesCollection) {
 	parts := strings.Split(n.Text, ":")
 	if len(parts) != 2 {
 		return
@@ -157,29 +157,29 @@ func (n *VariableNode) GetVariable(variables *VariablesCollection) {
 	variables.Set(name, value)
 }
 
-func (n *VariableNode) GetCopy() node {
-	return NewVariableNode(n.Text, n.LineNumber)
+func (n *variableNode) GetCopy() node {
+	return newVariableNode(n.Text, n.LineNumber)
 }
 
-func (n *VariableNode) Dump(indent string) {
+func (n *variableNode) Dump(indent string) {
 	fmt.Printf("%sVariableNode: %s\n", indent, n.Text)
 }
 
-type SelectorNode struct {
-	BaseNode
+type selectorNode struct {
+	baseNode
 	Selectors       []string
 	MergedSelectors []string
 }
 
-func (n *SelectorNode) ExpandSelectors(parentSelectors []string) {
-	selectors := MergeSelectors(parentSelectors, n.Selectors)
+func (n *selectorNode) ExpandSelectors(parentSelectors []string) {
+	selectors := mergeSelectors(parentSelectors, n.Selectors)
 	n.MergedSelectors = selectors
 	for _, child := range n.Children {
 		child.ExpandSelectors(selectors)
 	}
 }
 
-func (n *SelectorNode) HideIfEmpty() bool {
+func (n *selectorNode) HideIfEmpty() bool {
 	isEmpty := true
 	for _, child := range n.Children {
 		if !child.HideIfEmpty() {
@@ -191,7 +191,7 @@ func (n *SelectorNode) HideIfEmpty() bool {
 	return isEmpty
 }
 
-func (n *SelectorNode) GetMixin(mixins mixins) {
+func (n *selectorNode) GetMixin(mixins mixins) {
 	selectors := n.Selectors
 	if len(selectors) != 1 {
 		return
@@ -202,8 +202,8 @@ func (n *SelectorNode) GetMixin(mixins mixins) {
 	mixins.Set(name, n)
 }
 
-func (n *SelectorNode) GetCopy() node {
-	copy := NewSelectorNode(n.Selectors, n.LineNumber)
+func (n *selectorNode) GetCopy() node {
+	copy := newSelectorNode(n.Selectors, n.LineNumber)
 
 	for _, child := range n.Children {
 		copy.Children = append(copy.Children, child.GetCopy())
@@ -212,7 +212,7 @@ func (n *SelectorNode) GetCopy() node {
 	return copy
 }
 
-func (n *SelectorNode) Dump(indent string) {
+func (n *selectorNode) Dump(indent string) {
 	fmt.Printf("%sSelectorNode", indent)
 
 	for _, selector := range n.MergedSelectors {
@@ -231,7 +231,7 @@ func (n *SelectorNode) Dump(indent string) {
 	}
 }
 
-func (n *SelectorNode) Render(w io.Writer) {
+func (n *selectorNode) Render(w io.Writer) {
 	if n.Hidden {
 		return
 	}
@@ -269,24 +269,24 @@ func (n *SelectorNode) Render(w io.Writer) {
 	}
 }
 
-type DeclarationNode struct {
-	BaseNode
+type declarationNode struct {
+	baseNode
 	Text string
 }
 
-func (n *DeclarationNode) GetType() string {
+func (n *declarationNode) GetType() string {
 	return "declaration"
 }
 
-func (n *DeclarationNode) GetCopy() node {
-	return NewDeclarationNode(n.Text, n.LineNumber)
+func (n *declarationNode) GetCopy() node {
+	return newDeclarationNode(n.Text, n.LineNumber)
 }
 
-func (n *DeclarationNode) Render(w io.Writer) {
+func (n *declarationNode) Render(w io.Writer) {
 	fmt.Fprintf(w, "  %s\n", n.Text)
 }
 
-func (n *DeclarationNode) ReplaceVariables(variables *VariablesCollection) error {
+func (n *declarationNode) ReplaceVariables(variables *variablesCollection) error {
 	text := n.Text
 
 	for {
@@ -310,52 +310,52 @@ func (n *DeclarationNode) ReplaceVariables(variables *VariablesCollection) error
 	}
 }
 
-func (n *DeclarationNode) Dump(indent string) {
+func (n *declarationNode) Dump(indent string) {
 	fmt.Printf("%sDeclarationNode: %s\n", indent, n.Text)
 }
 
-type MixinNode struct {
-	BaseNode
+type mixinNode struct {
+	baseNode
 	Text string
 }
 
-func (n *MixinNode) ExpandSelectors(parentSelectors []string) {
+func (n *mixinNode) ExpandSelectors(parentSelectors []string) {
 	for _, child := range n.Children {
 		child.ExpandSelectors(parentSelectors)
 	}
 }
 
-func (n *MixinNode) GetMixinName() string {
+func (n *mixinNode) GetMixinName() string {
 	return strings.TrimSuffix(strings.TrimSuffix(n.Text, ";"), "()")
 }
 
-func (n *MixinNode) Render(w io.Writer) {
+func (n *mixinNode) Render(w io.Writer) {
 	for _, child := range n.Children {
 		child.Render(w)
 	}
 }
 
-func (n *MixinNode) Dump(indent string) {
+func (n *mixinNode) Dump(indent string) {
 	fmt.Printf("%sMixinNode: %s\n", indent, n.Text)
 	for _, child := range n.Children {
 		child.Dump(indent + "  ")
 	}
 }
 
-type AtRuleNode struct {
-	BaseNode
+type atRuleNode struct {
+	baseNode
 	Text            string
 	ParentSelectors []string
 }
 
-func (n *AtRuleNode) ExpandSelectors(parentSelectors []string) {
+func (n *atRuleNode) ExpandSelectors(parentSelectors []string) {
 	n.ParentSelectors = parentSelectors
 	for _, child := range n.Children {
 		child.ExpandSelectors(parentSelectors)
 	}
 }
 
-func (n *AtRuleNode) ReplaceVariables(variables *VariablesCollection) error {
+func (n *atRuleNode) ReplaceVariables(variables *variablesCollection) error {
 	text := n.Text[1:]
 
 	for {
@@ -379,7 +379,7 @@ func (n *AtRuleNode) ReplaceVariables(variables *VariablesCollection) error {
 	}
 }
 
-func (n *AtRuleNode) HideIfEmpty() bool {
+func (n *atRuleNode) HideIfEmpty() bool {
 	isEmpty := true
 	for _, child := range n.Children {
 		if !child.HideIfEmpty() {
@@ -391,7 +391,7 @@ func (n *AtRuleNode) HideIfEmpty() bool {
 	return isEmpty
 }
 
-func (n *AtRuleNode) Render(w io.Writer) {
+func (n *atRuleNode) Render(w io.Writer) {
 	fmt.Fprintf(w, "%s {\n", n.Text)
 
 	declarationNodes := make([]node, 0)
@@ -428,141 +428,141 @@ func (n *AtRuleNode) Render(w io.Writer) {
 	fmt.Fprintln(w, "}")
 }
 
-func (n *AtRuleNode) Dump(indent string) {
+func (n *atRuleNode) Dump(indent string) {
 	fmt.Printf("%sAtRuleNode: %s\n", indent, n.Text)
 	for _, child := range n.Children {
 		child.Dump(indent + "  ")
 	}
 }
 
-type ImportNode struct {
-	BaseNode
+type importNode struct {
+	baseNode
 	Text string
 }
 
-func (n *ImportNode) Render(w io.Writer) {
+func (n *importNode) Render(w io.Writer) {
 	fmt.Fprintf(w, "%s\n", n.Text)
 }
 
-func (n *ImportNode) Dump(indent string) {
+func (n *importNode) Dump(indent string) {
 	fmt.Printf("%sImportNode: %s\n", indent, n.Text)
 }
 
-type Context struct {
-	ParentContext *Context
+type context struct {
+	ParentContext *context
 	Node          node
 }
 
-func (c *Context) AddChild(node node) {
+func (c *context) AddChild(node node) {
 	c.Node.AddChild(node)
 }
 
-func NewRootNode() *RootNode {
-	n := RootNode{}
+func newRootNode() *rootNode {
+	n := rootNode{}
 	n.Children = make([]node, 0)
 	return &n
 }
 
-func NewVariableNode(text string, lineNumber int) *VariableNode {
-	node := VariableNode{Text: text}
+func newVariableNode(text string, lineNumber int) *variableNode {
+	node := variableNode{Text: text}
 	node.LineNumber = lineNumber
 	return &node
 }
 
-func NewSelectorNode(selectors []string, lineNumber int) *SelectorNode {
-	n := SelectorNode{}
+func newSelectorNode(selectors []string, lineNumber int) *selectorNode {
+	n := selectorNode{}
 	n.Children = make([]node, 0)
 	n.Selectors = selectors
 	n.LineNumber = lineNumber
 	return &n
 }
 
-func NewDeclarationNode(text string, lineNumber int) *DeclarationNode {
-	node := DeclarationNode{Text: text}
+func newDeclarationNode(text string, lineNumber int) *declarationNode {
+	node := declarationNode{Text: text}
 	node.LineNumber = lineNumber
 	return &node
 }
 
-func NewMixinNode(text string, lineNumber int) *MixinNode {
-	node := MixinNode{Text: text}
+func newMixinNode(text string, lineNumber int) *mixinNode {
+	node := mixinNode{Text: text}
 	node.LineNumber = lineNumber
 	return &node
 }
 
-func NewAtRuleNode(text string, lineNumber int) *AtRuleNode {
-	n := AtRuleNode{Text: text}
+func newAtRuleNode(text string, lineNumber int) *atRuleNode {
+	n := atRuleNode{Text: text}
 	n.Children = make([]node, 0)
 	n.LineNumber = lineNumber
 	return &n
 }
 
-func NewImportNode(text string, lineNumber int) *ImportNode {
-	n := ImportNode{Text: text}
+func newImportNode(text string, lineNumber int) *importNode {
+	n := importNode{Text: text}
 	n.LineNumber = lineNumber
 	return &n
 }
 
-func NewContext(node node, parentContext *Context) *Context {
-	context := Context{parentContext, node}
+func newContext(node node, parentContext *context) *context {
+	context := context{parentContext, node}
 	return &context
 }
 
-func (p *parser) BuildTree(elements *elements) (*RootNode, error) {
-	root := NewRootNode()
+func (p *parser) BuildTree(elements *elements) (*rootNode, error) {
+	root := newRootNode()
 
-	context := NewContext(root, nil)
+	context := newContext(root, nil)
 
 	for index, element := range elements.Items {
 		elementType := element.ElementType
 		text := element.Text
 		lineNumber := element.LineNumber
 
-		if elementType == Variable {
-			variableNode := NewVariableNode(text, lineNumber)
+		if elementType == typeVariable {
+			variableNode := newVariableNode(text, lineNumber)
 			context.AddChild(variableNode)
 		}
 
-		if elementType == Declaration {
+		if elementType == typeDeclaration {
 			declarations := splitDeclarations(text)
 
 			for _, d := range declarations {
-				declarationNode := NewDeclarationNode(d, lineNumber)
+				declarationNode := newDeclarationNode(d, lineNumber)
 				context.AddChild(declarationNode)
 			}
 		}
 
-		if elementType == Mixin {
+		if elementType == typeMixin {
 			declarations := splitDeclarations(text)
 
 			for _, d := range declarations {
-				mixinNode := NewMixinNode(d, lineNumber)
+				mixinNode := newMixinNode(d, lineNumber)
 				context.AddChild(mixinNode)
 			}
 		}
 
-		if elementType == Import {
-			importNode := NewImportNode(text, lineNumber)
+		if elementType == typeImport {
+			importNode := newImportNode(text, lineNumber)
 			context.AddChild(importNode)
 		}
 
-		if elementType == OpenBrace {
+		if elementType == typeOpenBrace {
 			previousElement := elements.Items[index-1]
 			previousType := previousElement.ElementType
 
-			if previousType == Selector {
+			if previousType == typeSelector {
 				selectors := getSelectors(elements, index-1)
-				selectorNode := NewSelectorNode(selectors, lineNumber)
+				selectorNode := newSelectorNode(selectors, lineNumber)
 				context.AddChild(selectorNode)
-				context = NewContext(selectorNode, context)
-			} else if previousType == AtRule {
-				atRuleNode := NewAtRuleNode(previousElement.Text, lineNumber)
+				context = newContext(selectorNode, context)
+			} else if previousType == typeAtRule {
+				atRuleNode := newAtRuleNode(previousElement.Text, lineNumber)
 				context.AddChild(atRuleNode)
-				context = NewContext(atRuleNode, context)
+				context = newContext(atRuleNode, context)
 			}
 
 		}
 
-		if elementType == CloseBrace {
+		if elementType == typeCloseBrace {
 			context = context.ParentContext
 		}
 	}
@@ -619,7 +619,7 @@ func splitDeclarations(str string) []string {
 	}
 }
 
-func MergeSelectors(parentSelectors []string, childSelectors []string) []string {
+func mergeSelectors(parentSelectors []string, childSelectors []string) []string {
 	selectors := make([]string, 0)
 
 	for _, childSelector := range childSelectors {

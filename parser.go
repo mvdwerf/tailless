@@ -10,21 +10,21 @@ import (
 )
 
 const (
-	Variable    = 1
-	AtRule      = 2
-	Declaration = 3
-	Selector    = 4
-	OpenBrace   = 5
-	CloseBrace  = 6
-	Import      = 7
-	Mixin       = 8
+	typeVariable    = 1
+	typeAtRule      = 2
+	typeDeclaration = 3
+	typeSelector    = 4
+	typeOpenBrace   = 5
+	typeCloseBrace  = 6
+	typeImport      = 7
+	typeMixin       = 8
 )
 
 var reVariable = regexp.MustCompile(`@[0-9A-Za-z-_]+`)
 var reBraces = regexp.MustCompile(`[\{\}]`)
 
 type parser struct {
-	Elements *[]Element
+	Elements *[]element
 }
 
 type line struct {
@@ -42,7 +42,7 @@ func newLines() *lines {
 	return &lines
 }
 
-type Element struct {
+type element struct {
 	Text        string
 	ElementType int
 	LineNumber  int
@@ -50,12 +50,12 @@ type Element struct {
 }
 
 type elements struct {
-	Items []Element
+	Items []element
 }
 
 func newElements() *elements {
 	elements := elements{}
-	elements.Items = make([]Element, 0)
+	elements.Items = make([]element, 0)
 	return &elements
 }
 
@@ -79,8 +79,6 @@ func (p *parser) Parse(srcFilename string, destFilename string) error {
 		return err
 	}
 
-	//	elements.Dump()
-
 	err = p.ValidateElements(elements)
 	if err != nil {
 		return err
@@ -96,12 +94,12 @@ func (p *parser) Parse(srcFilename string, destFilename string) error {
 		return err
 	}
 
-	err = ResolveVariables(tree)
+	err = resolveVariables(tree)
 	if err != nil {
 		return err
 	}
 
-	ExpandSelectors(tree)
+	expandSelectors(tree)
 
 	tree.HideIfEmpty()
 
@@ -244,30 +242,30 @@ func (p *parser) SplitIntoElements(lines *lines) (*elements, error) {
 	for _, line := range lines.Items {
 		str := line.Text
 
-		if IsVariable(str) {
-			elements.Add(str, Variable, line.LineNumber)
-		} else if IsAtRule(str) {
+		if isVariable(str) {
+			elements.Add(str, typeVariable, line.LineNumber)
+		} else if isAtRule(str) {
 			if str[:7] == "@import" {
-				elements.Add(str, Import, line.LineNumber)
+				elements.Add(str, typeImport, line.LineNumber)
 			} else {
-				elements.Add(str, AtRule, line.LineNumber)
+				elements.Add(str, typeAtRule, line.LineNumber)
 			}
-		} else if IsDeclarationStart(str) {
-			elements.Add(str, Declaration, line.LineNumber)
-			inDeclaration = !EndsWithSemiColon(str)
+		} else if isDeclarationStart(str) {
+			elements.Add(str, typeDeclaration, line.LineNumber)
+			inDeclaration = !endsWithSemiColon(str)
 		} else if str == "{" {
 			level++
-			elements.AddLevel(str, OpenBrace, line.LineNumber, level)
+			elements.AddLevel(str, typeOpenBrace, line.LineNumber, level)
 		} else if str == "}" {
-			elements.AddLevel(str, CloseBrace, line.LineNumber, level)
+			elements.AddLevel(str, typeCloseBrace, line.LineNumber, level)
 			level--
 		} else if inDeclaration {
-			elements.Add(str, Declaration, line.LineNumber)
-			inDeclaration = !EndsWithSemiColon(str)
-		} else if EndsWithSemiColon(str) {
-			elements.Add(str, Mixin, line.LineNumber)
+			elements.Add(str, typeDeclaration, line.LineNumber)
+			inDeclaration = !endsWithSemiColon(str)
+		} else if endsWithSemiColon(str) {
+			elements.Add(str, typeMixin, line.LineNumber)
 		} else {
-			elements.Add(str, Selector, line.LineNumber)
+			elements.Add(str, typeSelector, line.LineNumber)
 		}
 	}
 
@@ -277,7 +275,7 @@ func (p *parser) SplitIntoElements(lines *lines) (*elements, error) {
 func (p *parser) ValidateElements(elements *elements) error {
 	lastLevel := 1
 	for _, element := range elements.Items {
-		if element.ElementType != CloseBrace {
+		if element.ElementType != typeCloseBrace {
 			continue
 		}
 
@@ -298,18 +296,18 @@ func (p *parser) ValidateElements(elements *elements) error {
 		elementType := item.ElementType
 		nextElementType := nextItem.ElementType
 
-		if elementType == AtRule && nextElementType != OpenBrace {
+		if elementType == typeAtRule && nextElementType != typeOpenBrace {
 			return fmt.Errorf("Line %d: Missing opening brace", nextItem.LineNumber)
 		}
 
-		if elementType == Selector {
-			if nextElementType != Selector && nextElementType != OpenBrace {
+		if elementType == typeSelector {
+			if nextElementType != typeSelector && nextElementType != typeOpenBrace {
 				return fmt.Errorf("Line %d: Missing opening brace", nextItem.LineNumber)
 			}
 		}
 
-		if nextElementType == OpenBrace {
-			if elementType != AtRule && elementType != Selector {
+		if nextElementType == typeOpenBrace {
+			if elementType != typeAtRule && elementType != typeSelector {
 				fmt.Println("Type: ", elementType)
 				return fmt.Errorf("Line %d: Invalid opening brace", nextItem.LineNumber)
 			}
@@ -323,7 +321,7 @@ func (p *parser) ValidateElements(elements *elements) error {
 	return nil
 }
 
-func IsVariable(str string) bool {
+func isVariable(str string) bool {
 	if str[0:1] != "@" {
 		return false
 	}
@@ -341,7 +339,7 @@ func IsVariable(str string) bool {
 	return true
 }
 
-func IsAtRule(str string) bool {
+func isAtRule(str string) bool {
 	if str[0:1] != "@" {
 		return false
 	}
@@ -349,7 +347,7 @@ func IsAtRule(str string) bool {
 	return true
 }
 
-func IsDeclarationStart(str string) bool {
+func isDeclarationStart(str string) bool {
 	pos := strings.Index(str, ":")
 	if pos < 0 {
 		return false
@@ -366,7 +364,7 @@ func IsDeclarationStart(str string) bool {
 	return false
 }
 
-func EndsWithSemiColon(str string) bool {
+func endsWithSemiColon(str string) bool {
 	if str[len(str)-1:] != ";" {
 		return false
 	}
@@ -387,16 +385,10 @@ func (l *lines) AddLine(line line) {
 	l.Items = append(l.Items, line)
 }
 
-func (l *lines) Dump() {
-	for _, line := range l.Items {
-		fmt.Printf("%d: %s\n", line.LineNumber, line.Text)
-	}
-}
-
 func (e *elements) Add(text string, elementType int, lineNumber int) {
 	e.AddLevel(text, elementType, lineNumber, 0)
 }
 
 func (e *elements) AddLevel(text string, elementType int, lineNumber int, level int) {
-	e.Items = append(e.Items, Element{text, elementType, lineNumber, level})
+	e.Items = append(e.Items, element{text, elementType, lineNumber, level})
 }

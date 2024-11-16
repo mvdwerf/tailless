@@ -19,23 +19,23 @@ func newTailwindCollection() *tailwindCollection {
 	return &collection
 }
 
-func (t *tailwindCollection) Get(name string) *SelectorNode {
+func (t *tailwindCollection) Get(name string) *selectorNode {
 	value := t.Items[name]
 	if value == "" {
 		return nil
 	}
 
 	children := make([]node, 0)
-	child := NewDeclarationNode(value, 0)
+	child := newDeclarationNode(value, 0)
 	children = append(children, child)
 
-	n := SelectorNode{}
+	n := selectorNode{}
 	n.Children = children
 
 	return &n
 }
 
-func (t *tailwindCollection) Set(name string, node *SelectorNode) {
+func (t *tailwindCollection) Set(name string, node *selectorNode) {
 
 }
 

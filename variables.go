@@ -2,12 +2,12 @@ package tailless
 
 import "fmt"
 
-func ResolveVariables(tree *RootNode) error {
-	return RecursiveResolveVariables(tree, nil)
+func resolveVariables(tree *rootNode) error {
+	return recursiveResolveVariables(tree, nil)
 }
 
-func RecursiveResolveVariables(node node, parentVariables *VariablesCollection) error {
-	variables := NewVariablesCollection(parentVariables)
+func recursiveResolveVariables(node node, parentVariables *variablesCollection) error {
+	variables := newVariablesCollection(parentVariables)
 	variables.Read(node)
 
 	err := node.ReplaceVariables(variables)
@@ -16,7 +16,7 @@ func RecursiveResolveVariables(node node, parentVariables *VariablesCollection) 
 	}
 
 	for _, child := range node.GetChildren() {
-		err := RecursiveResolveVariables(child, variables)
+		err := recursiveResolveVariables(child, variables)
 		if err != nil {
 			return err
 		}
@@ -25,18 +25,18 @@ func RecursiveResolveVariables(node node, parentVariables *VariablesCollection) 
 	return nil
 }
 
-type VariablesCollection struct {
-	Parent *VariablesCollection
+type variablesCollection struct {
+	Parent *variablesCollection
 	Items  map[string]string
 }
 
-func NewVariablesCollection(parent *VariablesCollection) *VariablesCollection {
-	variables := VariablesCollection{Parent: parent}
+func newVariablesCollection(parent *variablesCollection) *variablesCollection {
+	variables := variablesCollection{Parent: parent}
 	variables.Items = make(map[string]string)
 	return &variables
 }
 
-func (v *VariablesCollection) Get(name string) string {
+func (v *variablesCollection) Get(name string) string {
 	value := v.Items[name]
 	if value != "" {
 		return value
@@ -49,17 +49,17 @@ func (v *VariablesCollection) Get(name string) string {
 	return ""
 }
 
-func (v *VariablesCollection) Read(n node) {
+func (v *variablesCollection) Read(n node) {
 	for _, child := range n.GetChildren() {
 		child.GetVariable(v)
 	}
 }
 
-func (v *VariablesCollection) Set(name string, value string) {
+func (v *variablesCollection) Set(name string, value string) {
 	v.Items[name] = value
 }
 
-func (v *VariablesCollection) Dump() {
+func (v *variablesCollection) Dump() {
 	for name, value := range v.Items {
 		fmt.Printf("%s = %s\n", name, value)
 	}
