@@ -629,7 +629,7 @@ func mergeSelectors(parentSelectors []string, childSelectors []string) []string 
 
 		for _, parentSelector := range parentSelectors {
 			var selector string
-			if strings.Index(childSelector, "&") >= 0 {
+			if strings.Contains(childSelector, "&") {
 				selector = strings.ReplaceAll(childSelector, "&", parentSelector)
 			} else if parentSelector != "" {
 				selector = parentSelector + " " + childSelector

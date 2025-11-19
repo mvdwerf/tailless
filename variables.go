@@ -3,7 +3,8 @@ package tailless
 import "fmt"
 
 func resolveVariables(tree *rootNode) error {
-	return recursiveResolveVariables(tree, nil)
+	colorVariables := variablesCollection{Items: *colors}
+	return recursiveResolveVariables(tree, &colorVariables)
 }
 
 func recursiveResolveVariables(node node, parentVariables *variablesCollection) error {
