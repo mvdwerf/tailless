@@ -281,17 +281,15 @@ func (p *Parser) AddCustomColor(name, value string) {
 func (p *Parser) GetDefaultMixins() mixins {
 	defaultMixins := newTailwindCollection()
 
-	color := createHelper(defaultMixins, "color", "color: $1;")
+	text := createHelper(defaultMixins, "text", "color: $1;")
 	bg := createHelper(defaultMixins, "bg", "background-color: $1;")
-	text := createHelper(defaultMixins, "text", "text-color: $1;")
 	border := createHelper(defaultMixins, "border", "border-color: $1;")
 	outline := createHelper(defaultMixins, "outline", "outline-color: $1;")
-	decoration := createHelper(defaultMixins, "decoration", "decoration-color: $1;")
+	decoration := createHelper(defaultMixins, "decoration", "text-decoration-color: $1;")
 
 	for name, value := range p.Colors {
-		color.Set(name, value)
-		bg.Set(name, value)
 		text.Set(name, value)
+		bg.Set(name, value)
 		border.Set(name, value)
 		outline.Set(name, value)
 		decoration.Set(name, value)
