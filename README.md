@@ -6,7 +6,8 @@ This GO package is, as the name suggests, a combination of TailWind CSS and the 
 
 ```go
 func main() {
-    err := tailless.Parse("style.less", "style.css")
+	parser := tailless.NewParser()
+    err := parser.Parse("style.less", "style.css")
     if err != nil {
         fmt.Println(err)
     }

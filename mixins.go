@@ -7,8 +7,8 @@ type mixins interface {
 	Set(string, *selectorNode)
 }
 
-func resolveMixins(tree *rootNode) error {
-	return recursiveResolveMixins(tree, nil, newTailwindCollection())
+func resolveMixins(tree *rootNode, defaultMixins mixins) error {
+	return recursiveResolveMixins(tree, nil, defaultMixins)
 }
 
 func recursiveResolveMixins(n node, parentMixins mixins, twMixins mixins) error {

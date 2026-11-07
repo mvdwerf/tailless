@@ -84,7 +84,6 @@ func initTailwind(c *tailwindCollection) {
 
 	initFontSizes(c, "text", "font-size: $1; line-height: $2;")
 	initLeading(c, "leading", "line-height: $1;")
-	initColors(c, "text", "color: $1;")
 	initTextAlign(c, "text", "text-align: $1;")
 
 	initFontWeights(c, "font", "font-weight: $1;")

@@ -458,47 +458,41 @@ func (c *context) AddChild(node node) {
 }
 
 func newRootNode() *rootNode {
-	n := rootNode{}
-	n.Children = make([]node, 0)
+	n := rootNode{Children: make([]node, 0)}
 	return &n
 }
 
 func newVariableNode(text string, lineNumber int) *variableNode {
-	node := variableNode{Text: text}
-	node.LineNumber = lineNumber
+	node := variableNode{Text: text, LineNumber: lineNumber}
 	return &node
 }
 
 func newSelectorNode(selectors []string, lineNumber int) *selectorNode {
-	n := selectorNode{}
-	n.Children = make([]node, 0)
-	n.Selectors = selectors
-	n.LineNumber = lineNumber
+	n := selectorNode{
+		Children:   make([]node, 0),
+		Selectors:  selectors,
+		LineNumber: lineNumber,
+	}
 	return &n
 }
 
 func newDeclarationNode(text string, lineNumber int) *declarationNode {
-	node := declarationNode{Text: text}
-	node.LineNumber = lineNumber
+	node := declarationNode{Text: text, LineNumber: lineNumber}
 	return &node
 }
 
 func newMixinNode(text string, lineNumber int) *mixinNode {
-	node := mixinNode{Text: text}
-	node.LineNumber = lineNumber
+	node := mixinNode{Text: text, LineNumber: lineNumber}
 	return &node
 }
 
 func newAtRuleNode(text string, lineNumber int) *atRuleNode {
-	n := atRuleNode{Text: text}
-	n.Children = make([]node, 0)
-	n.LineNumber = lineNumber
+	n := atRuleNode{Text: text, Children: make([]node, 0), LineNumber: lineNumber}
 	return &n
 }
 
 func newImportNode(text string, lineNumber int) *importNode {
-	n := importNode{Text: text}
-	n.LineNumber = lineNumber
+	n := importNode{Text: text, LineNumber: lineNumber}
 	return &n
 }
 
@@ -507,7 +501,7 @@ func newContext(node node, parentContext *context) *context {
 	return &context
 }
 
-func (p *parser) BuildTree(elements *elements) (*rootNode, error) {
+func (p *Parser) BuildTree(elements *elements) (*rootNode, error) {
 	root := newRootNode()
 
 	context := newContext(root, nil)

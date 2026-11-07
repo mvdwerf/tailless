@@ -23,8 +23,8 @@ const (
 var reVariable = regexp.MustCompile(`@[0-9A-Za-z-_]+`)
 var reBraces = regexp.MustCompile(`[\{\}]`)
 
-type parser struct {
-	Elements *[]element
+type Parser struct {
+	Colors map[string]string
 }
 
 type line struct {
@@ -59,11 +59,11 @@ func newElements() *elements {
 	return &elements
 }
 
-func newParser() *parser {
-	return &parser{}
+func NewParser() *Parser {
+	return &Parser{Colors: make(map[string]string)}
 }
 
-func (p *parser) Parse(srcFilename string, destFilename string) error {
+func (p *Parser) Parse(srcFilename string, destFilename string) error {
 	lines, err := p.RemoveComments(srcFilename)
 	if err != nil {
 		return err
@@ -89,7 +89,9 @@ func (p *parser) Parse(srcFilename string, destFilename string) error {
 		return err
 	}
 
-	err = resolveMixins(tree)
+	defaultMixins := p.GetDefaultMixins()
+
+	err = resolveMixins(tree, defaultMixins)
 	if err != nil {
 		return err
 	}
@@ -140,7 +142,7 @@ func copyFile(src, dest string) error {
 	return nil
 }
 
-func (p *parser) RemoveComments(filename string) (*lines, error) {
+func (p *Parser) RemoveComments(filename string) (*lines, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -195,10 +197,10 @@ func (p *parser) RemoveComments(filename string) (*lines, error) {
 		}
 	}
 
-	return lines, nil
+	return lines, scanner.Err()
 }
 
-func (p *parser) SplitBraces(lines *lines) (*lines, error) {
+func (p *Parser) SplitBraces(lines *lines) (*lines, error) {
 	newLines := newLines()
 
 	for _, line := range lines.Items {
@@ -233,7 +235,7 @@ func (p *parser) SplitBraces(lines *lines) (*lines, error) {
 
 }
 
-func (p *parser) SplitIntoElements(lines *lines) (*elements, error) {
+func (p *Parser) SplitIntoElements(lines *lines) (*elements, error) {
 	elements := newElements()
 
 	inDeclaration := false
@@ -272,7 +274,33 @@ func (p *parser) SplitIntoElements(lines *lines) (*elements, error) {
 	return elements, nil
 }
 
-func (p *parser) ValidateElements(elements *elements) error {
+func (p *Parser) AddCustomColor(name, value string) {
+	p.Colors[name] = value
+}
+
+func (p *Parser) GetDefaultMixins() mixins {
+	defaultMixins := newTailwindCollection()
+
+	color := createHelper(defaultMixins, "color", "color: $1;")
+	bg := createHelper(defaultMixins, "bg", "background-color: $1;")
+	text := createHelper(defaultMixins, "text", "text-color: $1;")
+	border := createHelper(defaultMixins, "border", "border-color: $1;")
+	outline := createHelper(defaultMixins, "outline", "outline-color: $1;")
+	decoration := createHelper(defaultMixins, "decoration", "decoration-color: $1;")
+
+	for name, value := range p.Colors {
+		color.Set(name, value)
+		bg.Set(name, value)
+		text.Set(name, value)
+		border.Set(name, value)
+		outline.Set(name, value)
+		decoration.Set(name, value)
+	}
+
+	return defaultMixins
+}
+
+func (p *Parser) ValidateElements(elements *elements) error {
 	lastLevel := 1
 	for _, element := range elements.Items {
 		if element.ElementType != typeCloseBrace {
